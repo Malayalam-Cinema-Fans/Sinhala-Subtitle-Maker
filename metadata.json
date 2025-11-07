@@ -1,0 +1,5 @@
+{
+  "name": "Sinhala Subtitle Translator",
+  "description": "An AI-powered tool to translate English subtitle files (.srt) into fluent, simple, spoken Sinhala, focusing on meaningful and natural-sounding translations.",
+  "requestFramePermissions": []
+}
