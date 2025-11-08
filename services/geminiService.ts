@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from '@google/genai';
 
 const API_KEY = process.env.API_KEY;
@@ -42,13 +43,13 @@ Your JSON output MUST be exactly this:
 
 export const translateSubtitles = async (
   texts: string[],
-  onProgress: (progress: number) => void
+  onUpdate: (progress: number, translatedLines: string[]) => void
 ): Promise<string[]> => {
   const BATCH_SIZE = 50; // Translate 50 lines at a time
   const totalTexts = texts.length;
   let allTranslatedTexts: string[] = [];
 
-  onProgress(0);
+  onUpdate(0, []);
 
   for (let i = 0; i < totalTexts; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
@@ -106,8 +107,8 @@ ${numberedBatch}
           throw new Error(`Translation mismatch or invalid format for batch starting at index ${i}. Expected ${batch.length} translations, got ${result?.translations?.length || 0}.`);
       }
 
-      const progress = Math.round(((i + batch.length) / totalTexts) * 100);
-      onProgress(Math.min(progress, 100)); // Ensure progress doesn't exceed 100
+      const progress = Math.round((allTranslatedTexts.length / totalTexts) * 100);
+      onUpdate(Math.min(progress, 100), allTranslatedTexts);
 
     } catch (error) {
       console.error(`Gemini API call failed for batch starting at index ${i}:`, error);

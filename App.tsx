@@ -9,6 +9,7 @@ import ResultDisplay from './components/ResultDisplay';
 import { Header } from './components/Header';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import ProgressBar from './components/ProgressBar';
+import TranslationPreview from './components/TranslationPreview';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
@@ -17,6 +18,7 @@ const App: React.FC = () => {
   const [translatedSrtText, setTranslatedSrtText] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
   const [translationProgress, setTranslationProgress] = useState(0);
+  const [translatedLines, setTranslatedLines] = useState<string[]>([]);
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (!file) return;
@@ -25,6 +27,7 @@ const App: React.FC = () => {
     setStatus(AppStatus.PARSING);
     setError(null);
     setTranslationProgress(0);
+    setTranslatedLines([]);
 
     try {
       const content = await file.text();
@@ -36,8 +39,9 @@ const App: React.FC = () => {
       setStatus(AppStatus.TRANSLATING);
 
       const englishTexts = parsedBlocks.map(block => block.text);
-      const translatedTexts = await translateSubtitles(englishTexts, (progress) => {
+      const translatedTexts = await translateSubtitles(englishTexts, (progress, lines) => {
         setTranslationProgress(progress);
+        setTranslatedLines(lines);
       });
 
       if (translatedTexts.length !== englishTexts.length) {
@@ -61,6 +65,7 @@ const App: React.FC = () => {
     setTranslatedSrtText('');
     setFileName('');
     setTranslationProgress(0);
+    setTranslatedLines([]);
   };
   
   const statusMessage = useMemo(() => {
@@ -78,19 +83,29 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
       <div className="w-full max-w-3xl mx-auto">
         <Header />
-        <main className="mt-8 bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl shadow-blue-500/10 p-6 sm:p-8 transition-all duration-300 min-h-[300px] flex flex-col justify-center items-center">
+        <main className="mt-8 bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl shadow-blue-500/10 p-6 sm:p-8 transition-all duration-300 min-h-[300px] flex flex-col justify-center items-center w-full">
           {status === AppStatus.IDLE && <FileUpload onFileSelect={handleFileSelect} />}
           
           {(status === AppStatus.PARSING || status === AppStatus.TRANSLATING) && (
             <div className="text-center w-full">
-              <LoadingSpinner />
-              <p className="mt-4 text-lg text-blue-300">{statusMessage}</p>
-              {status === AppStatus.TRANSLATING && (
-                <div className="mt-4 w-full max-w-md mx-auto">
-                    <ProgressBar progress={translationProgress} />
-                    <p className="text-sm text-gray-400 mt-2">{translationProgress}% Complete</p>
-                </div>
-              )}
+                {status === AppStatus.PARSING ? (
+                    <>
+                        <LoadingSpinner />
+                        <p className="mt-4 text-lg text-blue-300">{statusMessage}</p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-lg text-blue-300">{statusMessage}</p>
+                        <div className="mt-4 mb-6 w-full max-w-3xl mx-auto">
+                            <ProgressBar progress={translationProgress} />
+                            <p className="text-sm text-gray-400 mt-2">{translationProgress}% Complete</p>
+                        </div>
+                        <TranslationPreview 
+                            originalSrt={originalSrt} 
+                            translatedLines={translatedLines} 
+                        />
+                    </>
+                )}
             </div>
           )}
 
